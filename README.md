@@ -41,8 +41,8 @@ Now our Next.js app is fully translatable!
 
 ### 1. Installation
 
-```jsx
-yarn add next-i18next
+```bash
+yarn add next-i18next react-i18next i18next
 ```
 
 You need to also have `react` and `next` installed.
@@ -79,7 +79,7 @@ module.exports = {
     defaultLocale: 'en',
     locales: ['en', 'de'],
   },
-};
+}
 ```
 
 Now, create or modify your `next.config.js` file, by passing the `i18n` object into your `next.config.js` file, to enable localised URL routing:
@@ -87,11 +87,11 @@ Now, create or modify your `next.config.js` file, by passing the `i18n` object i
 #### [`next.config.js`](https://nextjs.org/docs/api-reference/next.config.js/introduction)
 
 ```js
-const { i18n } = require('./next-i18next.config');
+const { i18n } = require('./next-i18next.config')
 
 module.exports = {
   i18n,
-};
+}
 ```
 
 There are three functions that `next-i18next` exports, which you will need to use to translate your project:
@@ -101,11 +101,13 @@ There are three functions that `next-i18next` exports, which you will need to us
 This is a HOC which wraps your [`_app`](https://nextjs.org/docs/advanced-features/custom-app):
 
 ```tsx
-import { appWithTranslation } from 'next-i18next';
+import { appWithTranslation } from 'next-i18next'
 
-const MyApp = ({ Component, pageProps }) => <Component {...pageProps} />;
+const MyApp = ({ Component, pageProps }) => (
+  <Component {...pageProps} />
+)
 
-export default appWithTranslation(MyApp);
+export default appWithTranslation(MyApp)
 ```
 
 The `appWithTranslation` HOC is primarily responsible for adding a [`I18nextProvider`](https://react.i18next.com/latest/i18nextprovider).
@@ -115,15 +117,18 @@ The `appWithTranslation` HOC is primarily responsible for adding a [`I18nextProv
 This is an async function that you need to include on your page-level components, via either [`getStaticProps`](https://nextjs.org/docs/basic-features/data-fetching#getstaticprops-static-generation) or [`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering) (depending on your use case):
 
 ```tsx
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common', 'footer'])),
+      ...(await serverSideTranslations(locale, [
+        'common',
+        'footer',
+      ])),
       // Will be passed to the page component as props
     },
-  };
+  }
 }
 ```
 
@@ -135,27 +140,29 @@ The `serverSideTranslations` HOC is primarily responsible for passing translatio
 
 ### useTranslation
 
-This is the hook which you'll actually use to do the translation itself. The `useTranslation` hook [comes from `react-i18next`](https://react.i18next.com/latest/usetranslation-hook), but can be imported from `next-i18next` directly:
+This is the hook which you'll actually use to do the translation itself. The `useTranslation` hook [comes from `react-i18next`](https://react.i18next.com/latest/usetranslation-hook), but needs to be imported from `next-i18next` directly.
+<br/>
+**Do NOT use the `useTranslation` export of `react-i18next`, but ONLY use the on of `next-i18next`!**
 
 ```tsx
-import { useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next'
 
 export const Footer = () => {
-  const { t } = useTranslation('footer');
+  const { t } = useTranslation('footer')
 
   return (
     <footer>
       <p>{t('description')}</p>
     </footer>
-  );
-};
+  )
+}
 ```
 
 ### 4. Declaring namespace dependencies
 
 By default, `next-i18next` will send _all your namespaces_ down to the client on each initial request. This can be an appropriate approach for smaller apps with less content, but a lot of apps will benefit from splitting namespaces based on route.
 
-To do that, you can pass an array of required namespaces for each page into `serverSideTranslations`. You can see this approach in [examples/simple/pages/index.js](./examples/simple/pages/index.js). Passing in an empty array of required namespaces will send no namespaces.
+To do that, you can pass an array of required namespaces for each page into `serverSideTranslations`. You can see this approach in [examples/simple/pages/index.tsx](./examples/simple/pages/index.tsx). Passing in an empty array of required namespaces will send no namespaces.
 
 Note: `useTranslation` provides namespaces to the component that you use it in. However, `serverSideTranslations` provides the total available namespaces to the entire React tree and belongs on the page level. Both are required.
 
@@ -185,6 +192,7 @@ As a result the translations for both `no` and `en` locales will always be loade
 > Note: The extra argument should be added to all pages that use `getFixedT` function.
 
 #### Fallback locales
+
 By default, `next-i18next` will add the `defaultLocale` as fallback. To change this, you can set [`fallbackLng`](https://www.i18next.com/principles/fallback). All values supported by `i18next` (`string`, `array`, `object` and `function`) are supported by `next-i18next` too.
 
 Additionally `nonExplicitSupportedLngs` can be set to `true` to support all variants of a language, without the need to provide JSON files for each of them. Notice that all variants still must be included in `locales` to enable routing within `next.js`.
@@ -199,14 +207,16 @@ module.exports = {
   },
   fallbackLng: {
     default: ['en'],
-    'de-CH': ['fr']
+    'de-CH': ['fr'],
   },
   nonExplicitSupportedLngs: true,
   // de, fr and en will be loaded as fallback languages for de-CH
-};
+}
 ```
 
 Be aware that using `fallbackLng` and `nonExplicitSupportedLngs` can easily increase the initial size of the page.
+
+fyi: Setting `fallbackLng` to `false` will NOT serialize your fallback language (usually `defaultLocale`). This will decrease the size of your initial page load.
 
 ### 6. Advanced configuration
 
@@ -215,20 +225,22 @@ Be aware that using `fallbackLng` and `nonExplicitSupportedLngs` can easily incr
 If you need to modify more advanced configuration options, you can pass them via `next-i18next.config.js`. For example:
 
 ```js
-const path = require('path');
-
 module.exports = {
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'de'],
   },
-  localePath: path.resolve('./my/custom/path'),
-};
+  localePath:
+    typeof window === 'undefined'
+      ? require('path').resolve('./my-custom/path')
+      : '/public/my-custom/path',
+  ns: ['common'],
+}
 ```
 
-#### Unserialisable configs
+#### Unserializable configs
 
-Some `i18next` plugins (which you can pass into `config.use`) are unserialisable, as they contain functions and other JavaScript primitives.
+Some `i18next` plugins (which you can pass into `config.use`) are unserializable, as they contain functions and other JavaScript primitives.
 
 You may run into this if your use case is more advanced. You'll see Next.js throw an error like:
 
@@ -240,18 +252,20 @@ Reason: `function` cannot be serialized as JSON. Please only return JSON seriali
 To fix this, you'll need to set `config.serializeConfig` to `false`, and manually pass your config into `appWithTranslation`:
 
 ```tsx
-import { appWithTranslation } from 'next-i18next';
-import nextI18NextConfig from '../next-i18next.config.js';
+import { appWithTranslation } from 'next-i18next'
+import nextI18NextConfig from '../next-i18next.config.js'
 
-const MyApp = ({ Component, pageProps }) => <Component {...pageProps} />;
+const MyApp = ({ Component, pageProps }) => (
+  <Component {...pageProps} />
+)
 
-export default appWithTranslation(MyApp, nextI18NextConfig);
+export default appWithTranslation(MyApp, nextI18NextConfig)
 ```
 
 ```tsx
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 
-import nextI18NextConfig from '../next-i18next.config.js';
+import nextI18NextConfig from '../next-i18next.config.js'
 
 export const getStaticProps = async ({ locale }) => ({
   props: {
@@ -261,7 +275,7 @@ export const getStaticProps = async ({ locale }) => ({
       nextI18NextConfig
     )),
   },
-});
+})
 ```
 
 #### Client side loading of translations via HTTP
@@ -282,20 +296,22 @@ This option will reload your translations whenever `serverSideTranslations` is c
 
 #### Options
 
-| Key                 | Default value        | Note                                   |
-| ------------------- | -------------------- | -------------------------------------- |
-| `defaultNS`         | `'common'`           |                                        |
-| `localePath`        | `'./public/locales'` | Can be a function, see note below.     |
-| `localeExtension`   | `'json'`             | Ignored if `localePath` is a function. |
-| `localeStructure`   | `'{{lng}}/{{ns}}'`   | Ignored if `localePath` is a function. |
-| `reloadOnPrerender` | `false`              |                                        |
-| `serializeConfig`   | `true`               |                                        |
-| `use` (for plugins) | `[]`                 |                                        |
+| Key                 | Default value        | Note                                                           |
+| ------------------- | -------------------- | -------------------------------------------------------------- |
+| `defaultNS`         | `'common'`           |                                                                |
+| `localePath`        | `'./public/locales'` | Can be a function, see note below.                             |
+| `localeExtension`   | `'json'`             | Ignored if `localePath` is a function.                         |
+| `localeStructure`   | `'{{lng}}/{{ns}}'`   | Ignored if `localePath` is a function.                         |
+| `reloadOnPrerender` | `false`              |                                                                |
+| `serializeConfig`   | `true`               |                                                                |
+| `use` (for plugins) | `[]`                 |                                                                |
+| `onPreInitI18next`  | `undefined`          | i.e. `(i18n) => i18n.on('failedLoading', handleFailedLoading)` |
 
 `localePath` as a function is of the form `(locale: string, namespace: string, missing: boolean) => string` returning the entire path including filename and extension. When `missing` is true, return the path for the `addPath` option of `i18next-fs-backend`, when false, return the path for the `loadPath` option. [More info at the `i18next-fs-backend` repo.](https://github.com/i18next/i18next-fs-backend/tree/master#backend-options)
+<br />
+If the localePath is a function, make sure you also define the ns option, because on server side we're not able to preload the namespaces then.
 
 All other [i18next options](https://www.i18next.com/overview/configuration-options) and [react-i18next options](https://react.i18next.com/latest/i18next-instance) can be passed in as well.
-
 
 #### Custom interpolation prefix/suffix
 
@@ -318,12 +334,42 @@ For example, if you want to use `{` and `}` the config would look like this:
 }
 ```
 
+#### Custom `next-i18next.config.js` path
+
+If you want to change the default config path, you can set the environment variable `I18NEXT_DEFAULT_CONFIG_PATH`.
+
+For example, inside the `.env` file you can set a static path:
+
+```
+I18NEXT_DEFAULT_CONFIG_PATH=/path/to/project/apps/my-app/next-i18next.config.js
+```
+
+Or you can use a trick for dynamic path and set the following inside `next.config.js`:
+
+```js
+process.env.I18NEXT_DEFAULT_CONFIG_PATH = `${__dirname}/next-i18next.config.js`;
+
+// ... Some other imports
+
+const { i18n } = require('./next-i18next.config');
+
+// ... Some other code
+
+module.exports = {
+  i18n,
+  ...
+};
+```
+
+This means that the i18n configuration file will be in the same directory as `next.config.js` and it doesn't matter where your current working directory is. This helps for example for `nx` when you have monorepo and start your application from project root but the application is in `apps/{appName}`.
+
+**Notice** If your config `next-i18next.config.js` is not in the same directory as `next.config.js`, you must copy it manually (or by custom script).
+
 ## Notes
 
 ### Vercel and Netlify
 
 Some serverless PaaS may not be able to locate the path of your translations and require additional configuration. If you have filesystem issues using `serverSideTranslations`, set `config.localePath` to use `path.resolve`. An example can be [found here](https://github.com/i18next/next-i18next/issues/1552#issuecomment-981156476).
-
 
 ### Docker
 
@@ -348,15 +394,26 @@ Set the `ns` option, like in [this example](https://github.com/locize/next-i18ne
 If you cannot or do not want to provide the `ns` array, calls to the `t` function will cause namespaces to be loaded on the fly. This means you'll need to handle the "not ready" state by checking `ready === true` or `props.tReady === true`. Not doing so will result in rendering your translations before they loaded, which will cause "save missing" be called despite the translations actually existing (just yet not loaded).
 This can be done with the [useTranslation hook](https://react.i18next.com/latest/usetranslation-hook#not-using-suspense) or the [withTranslation HOC](https://react.i18next.com/latest/withtranslation-hoc#not-using-suspense).
 
-
 ### Static HTML Export SSG
 
 Are you trying to generate a [static HTML export](https://nextjs.org/docs/advanced-features/static-html-export) by executing `next export` and are getting this error?
->Error: i18n support is not compatible with next export. See here for more info on deploying: https://nextjs.org/docs/deployment
+
+> Error: i18n support is not compatible with next export. See here for more info on deploying: https://nextjs.org/docs/deployment
 
 But there's a way to workaround that with the help of [next-language-detector](https://github.com/i18next/next-language-detector).
 Check out [this blog post](https://locize.com/blog/next-i18n-static/) and [this example project](./examples/ssg/).
 [![](https://locize.com/blog/next-i18n-static/title.jpg)](https://locize.com/blog/next-i18n-static/)
+
+### Translate in child components
+
+You have multiple ways to use the t function in your child component:
+
+1. Pass the `t` function via props down to the children
+2. Pass the translated text via props down to the children, like in this example: https://github.com/i18next/next-i18next/blob/master/examples/simple/components/Header.tsx#L12
+3. Use the [`useTranslation`](https://react.i18next.com/latest/usetranslation-hook) function, like in this example: https://github.com/i18next/next-i18next/blob/e6b5085b5e92004afa9516bd444b19b2c8cf5758/examples/simple/components/Footer.tsx#L6
+4. Use the [`withTranslation`](https://react.i18next.com/latest/withtranslation-hoc) function
+
+_And in general, you always needs to be sure serverSideTranslations contains all namespaces you need in the tree._
 
 ## Contributors
 
@@ -366,19 +423,27 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 <table>
-   <tr>
-      <td align="center"><a href="https://locize.com/"><img src="https://avatars.githubusercontent.com/u/1086194?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Adriano Raiano</b></sub></a><br /><a href="#question-adrai" title="Answering Questions">💬</a> <a href="#blog-adrai" title="Blogposts">📝</a> <a href="https://github.com/i18next/next-i18next/issues?q=author%3Aadrai" title="Bug reports">🐛</a> <a href="https://github.com/i18next/next-i18next/commits?author=adrai" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=adrai" title="Documentation">📖</a>  <a href="#example-adrai" title="Examples">💡</a> <a href="https://github.com/i18next/next-i18next/pulls?q=is%3Apr+reviewed-by%3Aadrai" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/i18next/next-i18next/commits?author=adrai" title="Tests">⚠️</a> <a href="#tutorial-adrai" title="Tutorials">✅</a></td>
-      <td align="center"><a href="https://isaachinman.com/"><img src="https://avatars.githubusercontent.com/u/10575782?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Isaac Hinman</b></sub></a><br /><a href="#question-isaachinman" title="Answering Questions">💬</a> <a href="https://github.com/i18next/next-i18next/commits?author=isaachinman" title="Code">💻</a> <a href="#content-isaachinman" title="Content">🖋</a> <a href="https://github.com/i18next/next-i18next/commits?author=isaachinman" title="Documentation">📖</a> <a href="#example-isaachinman" title="Examples">💡</a> <a href="https://github.com/i18next/next-i18next/pulls?q=is%3Apr+reviewed-by%3Aisaachinman" title="Reviewed Pull Requests">👀</a></td>
-      <td align="center"><a href="https://github.com/capellini"><img src="https://avatars3.githubusercontent.com/u/75311?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Rob Capellini</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=capellini" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=capellini" title="Tests">⚠️</a></td>
-      <td align="center"><a href="https://en.kachkaev.ru"><img src="https://avatars3.githubusercontent.com/u/608862?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexander Kachkaev</b></sub></a><br /><a href="#talk-kachkaev" title="Talks">📢</a> <a href="#question-kachkaev" title="Answering Questions">💬</a> <a href="#ideas-kachkaev" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/i18next/next-i18next/commits?author=kachkaev" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=kachkaev" title="Tests">⚠️</a></td>
-      <td align="center"><a href="https://github.com/felixmosh"><img src="https://avatars.githubusercontent.com/u/9304194?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Felix Mosheev</b></sub></a><br /><a href="#question-felixmosh" title="Answering Questions">💬</a> <a href="https://github.com/i18next/next-i18next/commits?author=felixmosh" title="Code">💻</a> <a href="#talk-felixmosh" title="Talks">📢</a> <a href="https://github.com/i18next/next-i18next/commits?author=felixmosh" title="Tests">⚠️</a></td>
-      <td align="center"><a href="https://kandelborg.dk"><img src="https://avatars1.githubusercontent.com/u/33042011?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Mathias Wøbbe</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=MathiasKandelborg" title="Code">💻</a> <a href="#ideas-MathiasKandelborg" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/i18next/next-i18next/commits?author=MathiasKandelborg" title="Tests">⚠️</a></td>
-      <td align="center"><a href="http://lucasfeliciano.com"><img src="https://avatars3.githubusercontent.com/u/968014?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lucas Feliciano</b></sub></a><br /><a href="#ideas-lucasfeliciano" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/i18next/next-i18next/pulls?q=is%3Apr+reviewed-by%3Alucasfeliciano" title="Reviewed Pull Requests">👀</a></td>
-   </tr>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/capellini"><img src="https://avatars3.githubusercontent.com/u/75311?v=4?s=100" width="100px;" alt="Rob Capellini"/><br /><sub><b>Rob Capellini</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=capellini" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=capellini" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://en.kachkaev.ru"><img src="https://avatars3.githubusercontent.com/u/608862?v=4?s=100" width="100px;" alt="Alexander Kachkaev"/><br /><sub><b>Alexander Kachkaev</b></sub></a><br /><a href="#talk-kachkaev" title="Talks">📢</a> <a href="#question-kachkaev" title="Answering Questions">💬</a> <a href="#ideas-kachkaev" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/i18next/next-i18next/commits?author=kachkaev" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=kachkaev" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://kandelborg.dk"><img src="https://avatars1.githubusercontent.com/u/33042011?v=4?s=100" width="100px;" alt="Mathias Wøbbe"/><br /><sub><b>Mathias Wøbbe</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=MathiasKandelborg" title="Code">💻</a> <a href="#ideas-MathiasKandelborg" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/i18next/next-i18next/commits?author=MathiasKandelborg" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://lucasfeliciano.com"><img src="https://avatars3.githubusercontent.com/u/968014?v=4?s=100" width="100px;" alt="Lucas Feliciano"/><br /><sub><b>Lucas Feliciano</b></sub></a><br /><a href="#ideas-lucasfeliciano" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/i18next/next-i18next/pulls?q=is%3Apr+reviewed-by%3Alucasfeliciano" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.fifteenprospects.com"><img src="https://avatars2.githubusercontent.com/u/6932550?v=4?s=100" width="100px;" alt="Ryan Leung"/><br /><sub><b>Ryan Leung</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=minocys" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://nathanfriemel.com"><img src="https://avatars3.githubusercontent.com/u/1325835?v=4?s=100" width="100px;" alt="Nathan Friemel"/><br /><sub><b>Nathan Friemel</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=nathanfriemel" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=nathanfriemel" title="Documentation">📖</a> <a href="#example-nathanfriemel" title="Examples">💡</a> <a href="#ideas-nathanfriemel" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://isaachinman.com/"><img src="https://avatars.githubusercontent.com/u/10575782?v=4?s=100" width="100px;" alt="Isaac Hinman"/><br /><sub><b>Isaac Hinman</b></sub></a><br /><a href="#a11y-isaachinman" title="Accessibility">️️️️♿️</a> <a href="#question-isaachinman" title="Answering Questions">💬</a> <a href="#audio-isaachinman" title="Audio">🔊</a> <a href="#blog-isaachinman" title="Blogposts">📝</a> <a href="https://github.com/i18next/next-i18next/issues?q=author%3Aisaachinman" title="Bug reports">🐛</a> <a href="#business-isaachinman" title="Business development">💼</a> <a href="https://github.com/i18next/next-i18next/commits?author=isaachinman" title="Code">💻</a> <a href="#content-isaachinman" title="Content">🖋</a> <a href="#data-isaachinman" title="Data">🔣</a> <a href="#design-isaachinman" title="Design">🎨</a> <a href="https://github.com/i18next/next-i18next/commits?author=isaachinman" title="Documentation">📖</a> <a href="#eventOrganizing-isaachinman" title="Event Organizing">📋</a> <a href="#example-isaachinman" title="Examples">💡</a> <a href="#financial-isaachinman" title="Financial">💵</a> <a href="#fundingFinding-isaachinman" title="Funding Finding">🔍</a> <a href="#ideas-isaachinman" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-isaachinman" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-isaachinman" title="Maintenance">🚧</a> <a href="#mentoring-isaachinman" title="Mentoring">🧑‍🏫</a> <a href="#platform-isaachinman" title="Packaging/porting to new platform">📦</a> <a href="#plugin-isaachinman" title="Plugin/utility libraries">🔌</a> <a href="#projectManagement-isaachinman" title="Project Management">📆</a> <a href="#research-isaachinman" title="Research">🔬</a> <a href="https://github.com/i18next/next-i18next/pulls?q=is%3Apr+reviewed-by%3Aisaachinman" title="Reviewed Pull Requests">👀</a> <a href="#security-isaachinman" title="Security">🛡️</a> <a href="#talk-isaachinman" title="Talks">📢</a> <a href="https://github.com/i18next/next-i18next/commits?author=isaachinman" title="Tests">⚠️</a> <a href="#tool-isaachinman" title="Tools">🔧</a> <a href="#translation-isaachinman" title="Translation">🌍</a> <a href="#tutorial-isaachinman" title="Tutorials">✅</a> <a href="#userTesting-isaachinman" title="User Testing">📓</a> <a href="#video-isaachinman" title="Videos">📹</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://locize.com/"><img src="https://avatars.githubusercontent.com/u/1086194?v=4?s=100" width="100px;" alt="Adriano Raiano"/><br /><sub><b>Adriano Raiano</b></sub></a><br /><a href="#a11y-adrai" title="Accessibility">️️️️♿️</a> <a href="#question-adrai" title="Answering Questions">💬</a> <a href="#audio-adrai" title="Audio">🔊</a> <a href="#blog-adrai" title="Blogposts">📝</a> <a href="https://github.com/i18next/next-i18next/issues?q=author%3Aadrai" title="Bug reports">🐛</a> <a href="#business-adrai" title="Business development">💼</a> <a href="https://github.com/i18next/next-i18next/commits?author=adrai" title="Code">💻</a> <a href="#content-adrai" title="Content">🖋</a> <a href="#data-adrai" title="Data">🔣</a> <a href="#design-adrai" title="Design">🎨</a> <a href="https://github.com/i18next/next-i18next/commits?author=adrai" title="Documentation">📖</a> <a href="#eventOrganizing-adrai" title="Event Organizing">📋</a> <a href="#example-adrai" title="Examples">💡</a> <a href="#financial-adrai" title="Financial">💵</a> <a href="#fundingFinding-adrai" title="Funding Finding">🔍</a> <a href="#ideas-adrai" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-adrai" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-adrai" title="Maintenance">🚧</a> <a href="#mentoring-adrai" title="Mentoring">🧑‍🏫</a> <a href="#platform-adrai" title="Packaging/porting to new platform">📦</a> <a href="#plugin-adrai" title="Plugin/utility libraries">🔌</a> <a href="#projectManagement-adrai" title="Project Management">📆</a> <a href="#research-adrai" title="Research">🔬</a> <a href="https://github.com/i18next/next-i18next/pulls?q=is%3Apr+reviewed-by%3Aadrai" title="Reviewed Pull Requests">👀</a> <a href="#security-adrai" title="Security">🛡️</a> <a href="#talk-adrai" title="Talks">📢</a> <a href="https://github.com/i18next/next-i18next/commits?author=adrai" title="Tests">⚠️</a> <a href="#tool-adrai" title="Tools">🔧</a> <a href="#translation-adrai" title="Translation">🌍</a> <a href="#tutorial-adrai" title="Tutorials">✅</a> <a href="#userTesting-adrai" title="User Testing">📓</a> <a href="#video-adrai" title="Videos">📹</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/felixmosh"><img src="https://avatars.githubusercontent.com/u/9304194?v=4?s=100" width="100px;" alt="Felix Mosheev"/><br /><sub><b>Felix Mosheev</b></sub></a><br /><a href="#question-felixmosh" title="Answering Questions">💬</a> <a href="https://github.com/i18next/next-i18next/commits?author=felixmosh" title="Code">💻</a> <a href="#talk-felixmosh" title="Talks">📢</a> <a href="https://github.com/i18next/next-i18next/commits?author=felixmosh" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://soluble.io/pro"><img src="https://avatars.githubusercontent.com/u/259798?v=4?s=100" width="100px;" alt="Sébastien Vanvelthem"/><br /><sub><b>Sébastien Vanvelthem</b></sub></a><br /><a href="https://github.com/i18next/next-i18next/commits?author=belgattitude" title="Code">💻</a> <a href="https://github.com/i18next/next-i18next/commits?author=belgattitude" title="Documentation">📖</a> <a href="#example-belgattitude" title="Examples">💡</a> <a href="#maintenance-belgattitude" title="Maintenance">🚧</a> <a href="#userTesting-belgattitude" title="User Testing">📓</a></td>
+    </tr>
+  </tbody>
 </table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!

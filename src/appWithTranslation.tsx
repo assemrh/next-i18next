@@ -9,21 +9,23 @@ import createClient from './createClient'
 import { SSRConfig, UserConfig } from './types'
 
 import { i18n as I18NextClient } from 'i18next'
-export { Trans, useTranslation, withTranslation } from 'react-i18next'
-
-type AppProps = NextJsAppProps & {
-  pageProps: SSRConfig
-}
+export {
+  Trans,
+  useTranslation,
+  withTranslation,
+} from 'react-i18next'
 
 export let globalI18n: I18NextClient | null = null
 
-export const appWithTranslation = <Props extends AppProps = AppProps>(
+export const appWithTranslation = <Props extends NextJsAppProps>(
   WrappedComponent: React.ComponentType<Props>,
-  configOverride: UserConfig | null = null,
+  configOverride: UserConfig | null = null
 ) => {
-  const AppWithTranslation = (props: Props) => {
-    const { _nextI18Next } = props.pageProps as SSRConfig
-    let locale: string | null =
+  const AppWithTranslation = (
+    props: Props & { pageProps: Props['pageProps'] & SSRConfig }
+  ) => {
+    const { _nextI18Next } = props.pageProps || {} // pageProps may be undefined on strange setups, i.e. https://github.com/i18next/next-i18next/issues/2109
+    let locale: string | undefined =
       _nextI18Next?.initialLocale ?? props?.router?.locale
     const ns = _nextI18Next?.ns
 
@@ -34,27 +36,30 @@ export const appWithTranslation = <Props extends AppProps = AppProps>(
     const i18n: I18NextClient | null = useMemo(() => {
       if (!_nextI18Next && !configOverride) return null
 
-      let userConfig = configOverride ?? _nextI18Next?.userConfig
+      const userConfig = configOverride ?? _nextI18Next?.userConfig
 
-      if (!userConfig && configOverride === null) {
-        throw new Error('appWithTranslation was called without a next-i18next config')
-      }
-
-      if (configOverride !== null) {
-        userConfig = configOverride
+      if (!userConfig) {
+        throw new Error(
+          'appWithTranslation was called without a next-i18next config'
+        )
       }
 
       if (!userConfig?.i18n) {
-        throw new Error('appWithTranslation was called without config.i18n')
+        throw new Error(
+          'appWithTranslation was called without config.i18n'
+        )
       }
 
       if (!userConfig?.i18n?.defaultLocale) {
-        throw new Error('config.i18n does not include a defaultLocale property')
+        throw new Error(
+          'config.i18n does not include a defaultLocale property'
+        )
       }
 
       const { initialI18nStore } = _nextI18Next || {}
-      const resources =
-        configOverride?.resources ? configOverride.resources : initialI18nStore
+      const resources = configOverride?.resources
+        ? configOverride.resources
+        : initialI18nStore
 
       if (!locale) locale = userConfig.i18n.defaultLocale
 
@@ -74,24 +79,13 @@ export const appWithTranslation = <Props extends AppProps = AppProps>(
     }, [_nextI18Next, locale, configOverride, ns])
 
     return i18n !== null ? (
-      <I18nextProvider
-        i18n={i18n}
-      >
-        <WrappedComponent
-          key={locale}
-          {...props}
-        />
+      <I18nextProvider i18n={i18n}>
+        <WrappedComponent {...props} />
       </I18nextProvider>
     ) : (
-      <WrappedComponent
-        key={locale}
-        {...props}
-      />
+      <WrappedComponent key={locale} {...props} />
     )
   }
 
-  return hoistNonReactStatics(
-    AppWithTranslation,
-    WrappedComponent,
-  )
+  return hoistNonReactStatics(AppWithTranslation, WrappedComponent)
 }

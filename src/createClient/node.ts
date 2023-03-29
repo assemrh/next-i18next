@@ -1,7 +1,12 @@
 import i18n from 'i18next'
 import i18nextFSBackend from 'i18next-fs-backend'
 
-import { InternalConfig, CreateClientReturn, InitPromise, I18n } from '../types'
+import {
+  InternalConfig,
+  CreateClientReturn,
+  InitPromise,
+  I18n,
+} from '../types'
 
 let globalInstance: I18n
 
@@ -20,12 +25,17 @@ export default (config: InternalConfig): CreateClientReturn => {
   let initPromise: InitPromise
 
   if (!instance.isInitialized) {
-    const hasCustomBackend = config?.use?.some((b) => b.type === 'backend')
+    const hasCustomBackend = config?.use?.some(
+      b => b.type === 'backend'
+    )
     if (!hasCustomBackend) {
       instance.use(i18nextFSBackend)
     }
 
     config?.use?.forEach(x => instance.use(x))
+    if (typeof config.onPreInitI18next === 'function') {
+      config.onPreInitI18next(instance)
+    }
     initPromise = instance.init(config)
   } else {
     initPromise = Promise.resolve(i18n.t)

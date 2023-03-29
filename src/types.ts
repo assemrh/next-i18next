@@ -5,34 +5,57 @@ import {
   Trans,
   withTranslation,
   WithTranslation as ReactI18nextWithTranslation,
-  Resources,
-  DefaultNamespace,
   Translation,
 } from 'react-i18next'
-import { InitOptions, i18n as I18NextClient, TFunction as I18NextTFunction } from 'i18next'
+import {
+  InitOptions,
+  i18n as I18NextClient,
+  TFunction as I18NextTFunction,
+  TypeOptions,
+} from 'i18next'
 import { appWithTranslation, i18n } from './'
 
+/**
+ * Inlined from `import('next').NextConfig.i18n` v13.0.6. As we support
+ * multiple nextjs versions it's safer to inline and keep it up-to-date.
+ */
 type NextJsI18NConfig = {
   defaultLocale: string
+  domains?: {
+    defaultLocale: string
+    domain: string
+    http?: true
+    locales?: string[]
+  }[]
+  localeDetection?: false
   locales: string[]
 }
+
+type DefaultNamespace = TypeOptions['defaultNS']
 
 export type UserConfig = {
   i18n: NextJsI18NConfig
   localeExtension?: string
   localePath?:
-    string | ((locale: string, namespace: string, missing: boolean) => string)
+    | string
+    | ((
+        locale: string,
+        namespace: string,
+        missing: boolean
+      ) => string)
   localeStructure?: string
+  onPreInitI18next?: (i18n: I18n) => void
   reloadOnPrerender?: boolean
   serializeConfig?: boolean
   use?: any[]
 } & InitOptions
 
-export type InternalConfig = Omit<UserConfig, 'i18n'> & NextJsI18NConfig & {
-  errorStackTraceLimit: number
-  preload: string[]
-  supportedLngs: string[]
-}
+export type InternalConfig = Omit<UserConfig, 'i18n'> &
+  NextJsI18NConfig & {
+    errorStackTraceLimit: number
+    preload: string[]
+    supportedLngs: string[]
+  }
 
 export type UseTranslation = typeof useTranslation
 export type AppWithTranslation = typeof appWithTranslation
@@ -47,7 +70,7 @@ export type CreateClientReturn = {
 }
 
 export type SSRConfig = {
-  _nextI18Next: {
+  _nextI18Next?: {
     initialI18nStore: any
     initialLocale: string
     ns: string[]
@@ -63,6 +86,5 @@ export {
   Trans,
   Translation,
   withTranslation,
-  Resources,
   DefaultNamespace,
 }

@@ -2,41 +2,53 @@ import fs from 'fs'
 import path from 'path'
 
 import { createConfig } from './config/createConfig'
-import createClient from './createClient'
+import createClient from './createClient/node'
 
 import { globalI18n } from './appWithTranslation'
 
 import { UserConfig, SSRConfig } from './types'
-import { getFallbackForLng } from './utils'
+import { getFallbackForLng, unique } from './utils'
+import { Namespace } from 'i18next'
 
-const DEFAULT_CONFIG_PATH = './next-i18next.config.js'
+let DEFAULT_CONFIG_PATH = './next-i18next.config.js'
 
-const flatNamespaces = (namespacesByLocale: string[][]) => {
-  const allNamespaces = []
-  for (const localNamespaces of namespacesByLocale) {
-    allNamespaces.push(...localNamespaces)
-  }
-  return Array.from(new Set(allNamespaces))
+/**
+ * One line expression like `const { I18NEXT_DEFAULT_CONFIG_PATH: DEFAULT_CONFIG_PATH = './next-i18next.config.js' } = process.env;`
+ * is breaking the build, so keep it like this.
+ *
+ * @see https://github.com/i18next/next-i18next/pull/2084#issuecomment-1420511358
+ */
+if (process.env.I18NEXT_DEFAULT_CONFIG_PATH) {
+  DEFAULT_CONFIG_PATH = process.env.I18NEXT_DEFAULT_CONFIG_PATH
 }
+
+type ArrayElementOrSelf<T> = T extends Array<infer U> ? U[] : T[]
 
 export const serverSideTranslations = async (
   initialLocale: string,
-  namespacesRequired: string[] | undefined = undefined,
+  namespacesRequired:
+    | ArrayElementOrSelf<Namespace>
+    | undefined = undefined,
   configOverride: UserConfig | null = null,
-  extraLocales: string[] | false = false,
+  extraLocales: string[] | false = false
 ): Promise<SSRConfig> => {
   if (typeof initialLocale !== 'string') {
-    throw new Error('Initial locale argument was not passed into serverSideTranslations')
+    throw new Error(
+      'Initial locale argument was not passed into serverSideTranslations'
+    )
   }
 
   let userConfig = configOverride
+  const configPath = path.resolve(DEFAULT_CONFIG_PATH)
 
-  if (!userConfig && fs.existsSync(path.resolve(DEFAULT_CONFIG_PATH))) {
-    userConfig = await import(path.resolve(DEFAULT_CONFIG_PATH))
+  if (!userConfig && fs.existsSync(configPath)) {
+    userConfig = await import(configPath)
   }
 
   if (userConfig === null) {
-    throw new Error('next-i18next was unable to find a user config')
+    throw new Error(
+      `next-i18next was unable to find a user config at ${configPath}`
+    )
   }
 
   const config = createConfig({
@@ -67,31 +79,40 @@ export const serverSideTranslations = async (
   }
 
   getFallbackForLng(initialLocale, fallbackLng ?? false)
-    .concat((extraLocales || []))
+    .concat(extraLocales || [])
     .forEach((lng: string) => {
       initialI18nStore[lng] = {}
     })
 
   if (!Array.isArray(namespacesRequired)) {
     if (typeof localePath === 'function') {
-      throw new Error('Must provide namespacesRequired to serverSideTranslations when using a function as localePath')
+      throw new Error(
+        'Must provide namespacesRequired to serverSideTranslations when using a function as localePath'
+      )
     }
 
     const getLocaleNamespaces = (path: string) =>
-      fs.readdirSync(path)
-        .map(file => file.replace(`.${localeExtension}`, ''))
+      fs.existsSync(path)
+        ? fs
+            .readdirSync(path)
+            .map(file => file.replace(`.${localeExtension}`, ''))
+        : []
 
     const namespacesByLocale = Object.keys(initialI18nStore)
-      .map(locale => getLocaleNamespaces(path.resolve(process.cwd(), `${localePath}/${locale}`)))
+      .map(locale =>
+        getLocaleNamespaces(
+          path.resolve(process.cwd(), `${localePath}/${locale}`)
+        )
+      )
+      .flat()
 
-    namespacesRequired = flatNamespaces(namespacesByLocale)
+    namespacesRequired = unique(namespacesByLocale)
   }
 
-  namespacesRequired.forEach((ns) => {
+  namespacesRequired.forEach(ns => {
     for (const locale in initialI18nStore) {
-      initialI18nStore[locale][ns] = (
+      initialI18nStore[locale][ns] =
         (i18n.services.resourceStore.data[locale] || {})[ns] || {}
-      )
     }
   })
 

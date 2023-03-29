@@ -12,16 +12,22 @@
     "lint": "next lint",
     "test": "npm run lint",
     "serve": "http-server out -p 8080",
-    "downloadLocales": "locize download --project-id=0842ada9-1d1d-4d48-ab27-08f6a132f558 --ver=latest --clean=true --path=./public/locales"
+    "downloadLocales": "locize download --project-id=0842ada9-1d1d-4d48-ab27-08f6a132f558 --ver=latest --clean=true --path=./public/locales",
+    "clean": "rimraf .next out"
   },
   "dependencies": {
-    "next": "12.2.5",
-    "next-i18next": "12.0.0",
-    "next-language-detector": "1.0.2"
+    "i18next": "22.4.13",
+    "next": "13.2.4",
+    "next-i18next": "13.2.2",
+    "next-language-detector": "^1.0.2",
+    "react": "^18.2.0",
+    "react-i18next": "^12.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "eslint-config-next": "12.2.5",
+    "eslint-config-next": "13.2.4",
     "http-server": "14.1.1",
-    "locize-cli": "7.12.4"
+    "locize-cli": "7.14.0",
+    "rimraf": "^4.4.1"
   }
 }
